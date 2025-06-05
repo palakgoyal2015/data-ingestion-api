@@ -16,33 +16,27 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-
 class Priority(str, Enum):
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
 
-
 class IngestionRequest(BaseModel):
     ids: List[int]
     priority: Priority = Priority.MEDIUM
-
 
 class BatchStatus(BaseModel):
     batch_id: str
     ids: List[int]
     status: str
 
-
 class IngestionStatus(BaseModel):
     ingestion_id: str
     status: str
     batches: List[BatchStatus]
 
-
 job_queue = deque()
 processing_lock = asyncio.Lock()
-
 
 def init_db():
     conn = sqlite3.connect("ingestion.db")
@@ -66,14 +60,11 @@ def init_db():
     conn.commit()
     conn.close()
 
-
 init_db()
-
 
 async def fetch_data_from_external_api(id: int) -> Dict:
     await asyncio.sleep(1)
     return {"id": id, "data": "processed"}
-
 
 async def process_batch(batch_id: str, ingestion_id: str, ids: List[int]):
     try:
@@ -107,7 +98,6 @@ async def process_batch(batch_id: str, ingestion_id: str, ids: List[int]):
         conn.close()
     except Exception as e:
         logger.error(f"Error processing batch {batch_id}: {str(e)}")
-
 
 async def process_jobs():
     while True:
@@ -144,11 +134,17 @@ async def process_jobs():
             else:
                 await asyncio.sleep(1)
 
-
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(process_jobs())
 
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Data Ingestion API System! Visit /docs for the API documentation."}
+
+@app.get("/favicon.ico")
+async def favicon():
+    return None  # Returns 204 No Content
 
 @app.post("/ingest")
 async def ingest_data(request: IngestionRequest):
@@ -191,7 +187,6 @@ async def ingest_data(request: IngestionRequest):
 
     return {"ingestion_id": ingestion_id}
 
-
 @app.get("/status/{ingestion_id}")
 async def get_status(ingestion_id: str):
     conn = sqlite3.connect("ingestion.db")
@@ -218,8 +213,6 @@ async def get_status(ingestion_id: str):
         "batches": batches
     }
 
-
-# ✅ Required for Render: Bind to $PORT
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # Render sets $PORT
     uvicorn.run("main:app", host="0.0.0.0", port=port)
