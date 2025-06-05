@@ -7,6 +7,8 @@ import uuid
 import asyncio
 from collections import deque
 from datetime import datetime
+import os
+import uvicorn
 
 app = FastAPI()
 
@@ -142,3 +144,8 @@ async def get_status(ingestion_id: str):
         "status": ingestion[0],
         "batches": batches
     }
+
+if __name__ == "__main__":
+    # Use environment variable PORT, default to 8000 if not set
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
